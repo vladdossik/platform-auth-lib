@@ -16,7 +16,7 @@ import static org.springframework.http.HttpMethod.POST;
 
 @Component
 public class ApiClient extends AbstractApiClient {
-    private static final String CHECK_ROLE_ACCESS_API_AUTH = "/api/auth/check_role_access";
+    private static final String CHECK_ROLE_ACCESS_API_AUTH = "/api/auth/check-access";
 
     public ApiClient(WebClient webClient) {
         super(webClient);

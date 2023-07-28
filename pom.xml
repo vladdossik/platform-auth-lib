@@ -8,7 +8,6 @@
     <artifactId>platform-auth-token-lib</artifactId>
     <version>1.0</version>
     <name>Lissa-Learning auth token lib</name>
-    <url>some_url</url>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -90,20 +89,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-javadoc-plugin</artifactId>-->
-<!--                <version>3.2.0</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>attach-javadocs</id>-->
-<!--                        <goals>-->
-<!--                            <goal>jar</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
 
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>

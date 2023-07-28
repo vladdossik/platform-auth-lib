@@ -24,7 +24,6 @@ import java.time.Duration;
 @Slf4j
 public class WebClientFactory {
 
-    private static final int MAX_BODY_SIZE_FOR_LOG = 512;
     private static final int LIMITED_DATA_BUFFER_LIST_SIZE = 1024 * 1024;
     private final WebClientPropertiesStorage webClientPropertiesStorage;
 
@@ -48,7 +47,7 @@ public class WebClientFactory {
                     c.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper));
                 }).build())
             .clientConnector(getClientConnector(properties))
-            .filter(exceptionFilter())
+            .filter(exceptionFilter(properties.getMaxBodySizeForLog()))
             .build();
 
     }
@@ -60,12 +59,12 @@ public class WebClientFactory {
         );
     }
 
-    public ExchangeFilterFunction exceptionFilter() {
+    public ExchangeFilterFunction exceptionFilter(Integer maxBodySizeForLog) {
         return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
             if (clientResponse.statusCode().isError()) {
                 return clientResponse.bodyToMono(String.class)
                     .flatMap(errorBody -> {
-                        String reducedMessage = errorBody.substring(0, MAX_BODY_SIZE_FOR_LOG);
+                        String reducedMessage = errorBody.substring(0, maxBodySizeForLog);
                         printMessage(clientResponse, reducedMessage);
                         return Mono.error(getResponseException(clientResponse.statusCode()));
                     });
