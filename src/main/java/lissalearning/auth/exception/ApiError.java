@@ -1,4 +1,4 @@
-package lissalearning.token.exception;
+package lissalearning.auth.exception;
 
 public enum ApiError {
     CLIENT_ERROR,

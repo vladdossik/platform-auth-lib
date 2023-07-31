@@ -1,10 +1,10 @@
-package lissalearning.token.client;
+package lissalearning.auth.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lissalearning.token.exception.ApiClientException;
-import lissalearning.token.exception.ApiError;
-import lissalearning.token.properties.WebClientProperties;
-import lissalearning.token.properties.WebClientPropertiesStorage;
+import lissalearning.auth.exception.ApiClientException;
+import lissalearning.auth.exception.ApiError;
+import lissalearning.auth.properties.WebClientProperties;
+import lissalearning.auth.properties.WebClientPropertiesStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;

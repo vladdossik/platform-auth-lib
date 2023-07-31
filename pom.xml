@@ -5,9 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>lissa-learning</groupId>
-    <artifactId>platform-auth-token-lib</artifactId>
-    <version>1.0</version>
-    <name>Lissa-Learning auth token lib</name>
+    <artifactId>platform-auth-lib</artifactId>
+    <version>v.0.0.1</version>
+    <packaging>jar</packaging>
+    <name>Lissa-Learning auth lib</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
