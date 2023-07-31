@@ -1,4 +1,4 @@
-package lissalearning.token.exception;
+package lissalearning.auth.exception;
 
 
 public class ApiClientException extends Throwable {

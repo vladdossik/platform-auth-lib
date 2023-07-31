@@ -1,7 +1,7 @@
-package lissalearning.token.client;
+package lissalearning.auth.client;
 
-import lissalearning.token.exception.ApiClientException;
-import lissalearning.token.exception.ApiError;
+import lissalearning.auth.exception.ApiClientException;
+import lissalearning.auth.exception.ApiError;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;

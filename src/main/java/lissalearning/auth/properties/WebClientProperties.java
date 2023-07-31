@@ -1,4 +1,4 @@
-package lissalearning.token.properties;
+package lissalearning.auth.properties;
 
 import lombok.Data;
 
