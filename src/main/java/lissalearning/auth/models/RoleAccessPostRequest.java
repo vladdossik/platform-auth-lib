@@ -1,4 +1,4 @@
-package lissalearning.token.models;
+package lissalearning.auth.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
