@@ -21,7 +21,7 @@
 </dependency>
 ```
 
-В application.yml добавить:
+В application.yml добавить следующие настройки. Вместо AUTH_SERVICE_URL указать URL сервиса auth
 ``` yml
 auth-lib:
   web:
