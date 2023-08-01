@@ -30,6 +30,18 @@ auth-lib:
       responseTimeout: 1000
       maxBodySizeForLog: 512
 ```
+Затем в классе приложения (class SomeSpringApplication) прописать ComponentScan
+``` java
+@ComponentScan(basePackages = "lissalearning")
+public class SomeApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SomeApplication.class, args);
+	}
+
+}
+```
+
 Затем в контроллерах создать
 ``` java
 private final ApiClient authClient;
