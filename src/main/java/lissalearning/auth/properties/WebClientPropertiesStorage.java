@@ -10,7 +10,7 @@ import java.util.Map;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "token")
+@ConfigurationProperties(prefix = "auth-lib")
 public class WebClientPropertiesStorage {
     private Map<String, WebClientProperties> web;
 }
