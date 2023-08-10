@@ -10,11 +10,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 import static org.springframework.http.HttpMethod.POST;
 
-@Component
+@Component("apiClient")
 public class ApiClient extends AbstractApiClient {
     private static final String CHECK_ROLE_ACCESS_API_AUTH = "/api/auth/check-access";
 
@@ -22,9 +23,9 @@ public class ApiClient extends AbstractApiClient {
         super(webClient);
     }
 
-    public boolean checkAccessByTokenAndRole(String role, String jwtToken) throws ApiClientException {
+    public boolean checkAccessByTokenAndRole(String role, HttpServletRequest request) throws ApiClientException {
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
+        headers.setBearerAuth(request.getHeader("Authorization"));
         headers.setContentType(MediaType.APPLICATION_JSON);
         ParameterizedTypeReference<String> typeReference = new ParameterizedTypeReference<String>() {
         };
