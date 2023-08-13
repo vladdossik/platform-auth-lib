@@ -2,7 +2,8 @@ package lissalearning.auth.client;
 
 import lissalearning.auth.exception.ApiClientException;
 import lissalearning.auth.exception.ApiError;
-import lissalearning.auth.models.RoleAccessPostRequest;
+import lissalearning.auth.models.UserAuthoritiesResponse;
+import lissalearning.auth.models.UserDetailsImpl;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -11,35 +12,35 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Objects;
 
 import static org.springframework.http.HttpMethod.POST;
 
-@Component("apiClient")
-public class ApiClient extends AbstractApiClient {
-    private static final String CHECK_ROLE_ACCESS_API_AUTH = "/api/auth/check-access";
+@Component("authClient")
+public class AuthClient extends AbstractApiClient {
+    private static final String AUTHORIZE_USER_URL = "/api/auth/authorize";
 
-    public ApiClient(WebClient webClient) {
+    public AuthClient(WebClient webClient) {
         super(webClient);
     }
 
-    public boolean checkAccessByTokenAndRole(String role, HttpServletRequest request) throws ApiClientException {
+    public UserDetailsImpl getUserDetails(HttpServletRequest request) throws ApiClientException {
         HttpHeaders headers = new HttpHeaders();
+        if(request.getHeader("Authorization") == null)
+            throw new ApiClientException(ApiError.CLIENT_ERROR, "Non authorized");
         headers.setBearerAuth(request.getHeader("Authorization"));
         headers.setContentType(MediaType.APPLICATION_JSON);
-        ParameterizedTypeReference<String> typeReference = new ParameterizedTypeReference<String>() {
+        ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {
         };
-        RoleAccessPostRequest roleAccessPostRequest = new RoleAccessPostRequest(role);
         try {
-            String response = exchangeBlocking(
-                CHECK_ROLE_ACCESS_API_AUTH,
+            UserAuthoritiesResponse response = exchangeBlocking(
+                AUTHORIZE_USER_URL,
                 POST,
                 headers,
                 typeReference,
                 ApiError.UNEXPECTED_ERROR,
-                roleAccessPostRequest
+                null
             );
-            return Objects.equals(response, "Access granted");
+            return UserDetailsImpl.build(response);
         } catch (WebClientRequestException e) {
             throw new ApiClientException(ApiError.CLIENT_ERROR, "Error while sending request.");
         }
