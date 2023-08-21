@@ -17,7 +17,7 @@
 <dependency>
     <groupId>com.github.vladdossik</groupId>
     <artifactId>platform-auth-lib</artifactId>
-    <version>Tag</version>
+    <version>v.0.0.5</version>
 </dependency>
 ```
 
@@ -119,12 +119,44 @@ public class SecurityConfiguration {
     }
 }
 ```
-
-Затем в контроллерах добавить PreAuthorize, где нужно по необходимости прикрыть нужными ролями
+Если нужно добавить дополнительные поля у пользователя, то нужно создать класс, который имплементирует интерфейс UserDetails и методом build, который принимает в себя UserDetailsImpl user из либы
 ``` java
-@PreAuthorize("hasRole('ROLE_USER')")
-@PostMapping("/")
-public void doSomething() {}
+public class UserAuthenticationDetails implements UserDetails {
+    private static final long serialVersionUID = 1L;
+
+    private UUID id; // дополнительное поле 
+
+    private String username;
+
+    private Collection<? extends GrantedAuthority> authorities;
+
+    public UserAuthenticationDetails(UUID id, String username,
+                                     Collection<? extends GrantedAuthority> authorities) {
+        this.id = id;
+        this.username = username;
+        this.authorities = authorities;
+    }
+
+    public static UserAuthenticationDetails build(UserDetailsImpl user, UUID externalId) {
+        return new UserAuthenticationDetails(
+            externalId,
+            user.getUsername(),
+            user.getAuthorities());
+    }
+    //getters, setters and equals
+}
+```
+
+Затем в контроллерах добавить PreAuthorize, где нужно по необходимости прикрыть нужными ролями  
+Пример из user-service, UserController class  
+Данные могут получить админ, модератор или сам пользователь
+``` java
+@PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_MODERATOR') or authentication.principal.getId() == #externalId")
+@GetMapping("/{externalId}")
+@Operation(summary = "Получить пользователя по id")
+public UserResponseDto getUserById(@PathVariable UUID externalId) {
+    return userService.getUserById(externalId);
+}
 ```
 Также не забыть добавить в Swagger возможность прокидывать Authorization header
 ``` java
