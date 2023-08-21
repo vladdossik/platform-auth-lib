@@ -21,14 +21,26 @@
 </dependency>
 ```
 
-В application.yml добавить следующие настройки. Вместо AUTH_SERVICE_URL указать URL сервиса auth
+и если отстутствует security, то его тоже нужно будет добавить
+``` xml
+<dependency>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+
+В application.yml добавить следующие настройки
 ``` yml
 auth-lib:
   web:
     auth:
-      baseUrl: AUTH_SERVICE_URL
+      baseUrl: ${AUTH_SERVICE_URL}
       responseTimeout: 1000
       maxBodySizeForLog: 512
+```
+В docker-compose.yml добавить
+``` dockerfile
+AUTH_SERVICE_URL: http://auth-service:8081
 ```
 Затем в классе приложения (class SomeSpringApplication) прописать ComponentScan
 ``` java
@@ -42,17 +54,100 @@ public class SomeApplication {
 }
 ```
 
-Затем в контроллерах создать
+Создать UserDetailsServiceImpl и добавить метод loadUserByToken
 ``` java
-private final ApiClient authClient;
-```
-И внутри методов вызвать, предварительно пробросив RequestHeader Authorization. Вместо ROLE указать нужную роль 
-``` java
-@GetMapping("/something")
-public String getSomething(
-        @RequestHeader (name="Authorization") String token
-) throws ApiClientException {
-    authClient.checkAccessByTokenAndRole(ROLE, token);
-    return "something";
+@Transactional
+public UserDetailsImpl loadUserByToken(HttpServletRequest httpServletRequest) throws ApiClientException {
+    return authClient.getUserDetails(httpServletRequest);
 }
+```
+Создать AuthFilter и переопределить метод doFilterInternal
+``` java
+@Autowired
+private UserDetailsServiceImpl userDetailsService;
+
+@Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+        throws ServletException, IOException {
+        try {
+            UserDetailsImpl userDetails = userDetailsService.loadUserByToken(request);
+            UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities());
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (ApiClientException ex) {
+            logger.error("Cannot set user authentication: {}", ex);
+        }
+        filterChain.doFilter(request, response);
+    }
+```
+Создать SecurityConfiguration, пробросить фильтр и userDetailsService
+``` java
+@Configuration
+@RequiredArgsConstructor
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class SecurityConfiguration {
+
+    private final UserDetailsServiceImpl userDetailsService;
+
+    @Bean
+    public AuthFilter authorizationFilter() {
+        return new AuthFilter();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+
+        authProvider.setUserDetailsService(userDetailsService);
+
+        return authProvider;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.authenticationProvider(authenticationProvider());
+        http.addFilterBefore(authorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+}
+```
+
+Затем в контроллерах добавить PreAuthorize, где нужно по необходимости прикрыть нужными ролями
+``` java
+@PreAuthorize("hasRole('ROLE_USER')")
+@PostMapping("/")
+public void doSomething() {}
+```
+Также не забыть добавить в Swagger возможность прокидывать Authorization header
+``` java
+@Bean
+    public OpenAPI getOpenApi() {
+        return new OpenAPI()
+            .info(
+                new Info()
+                    .title("Api")
+                    .description(
+                        "Description")
+            ).addSecurityItem(
+                new SecurityRequirement()
+                    .addList("Bearer Authentication"))
+            .components(
+                new Components()
+                    .addSecuritySchemes("Bearer Authentication", createAPIKeyScheme()));
+
+    }
+
+    private SecurityScheme createAPIKeyScheme() {
+        return new SecurityScheme().type(SecurityScheme.Type.HTTP)
+            .bearerFormat("JWT")
+            .scheme("bearer");
+    }
 ```
