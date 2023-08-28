@@ -25,9 +25,9 @@ public class AuthClient extends AbstractApiClient {
 
     public UserDetailsImpl getUserDetails(HttpServletRequest request) throws ApiClientException {
         HttpHeaders headers = new HttpHeaders();
-        if(request.getHeader("Authorization") == null)
+        if(request.getHeader(HttpHeaders.AUTHORIZATION) == null)
             throw new ApiClientException(ApiError.CLIENT_ERROR, "Non authorized");
-        headers.setBearerAuth(request.getHeader("Authorization"));
+        headers.set(HttpHeaders.AUTHORIZATION, request.getHeader(HttpHeaders.AUTHORIZATION));
         headers.setContentType(MediaType.APPLICATION_JSON);
         ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {
         };
