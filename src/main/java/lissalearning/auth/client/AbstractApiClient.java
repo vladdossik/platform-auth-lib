@@ -6,7 +6,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
@@ -20,50 +19,55 @@ public abstract class AbstractApiClient {
     }
 
     protected <T> Mono<T> exchange(
-        String uri,
-        HttpMethod httpMethod,
-        HttpHeaders httpHeaders,
-        ParameterizedTypeReference<T> responseType,
-        ApiError timeoutExceedingError,
-        Object body,
-        Object... uriVariables
+            String uri,
+            HttpMethod httpMethod,
+            HttpHeaders httpHeaders,
+            ParameterizedTypeReference<T> responseType,
+            ApiError timeoutExceedingError,
+            Object body,
+            Object... uriVariables
     ) throws ApiClientException {
         try {
             return buildRequest(httpMethod, httpHeaders, uri, body, uriVariables)
-                .retrieve()
-                .bodyToMono(responseType);
-        } catch (WebClientRequestException e) {
+                    .retrieve()
+                    .bodyToMono(responseType);
+        } catch (Exception e) {
+            handleWebClientRequestException(e);
             throw new ApiClientException(timeoutExceedingError, e.getMessage());
         }
     }
 
     protected <T> T exchangeBlocking(
-        String uri,
-        HttpMethod httpMethod,
-        HttpHeaders httpHeaders,
-        ParameterizedTypeReference<T> responseType,
-        ApiError timeoutExceedingError,
-        Object body,
-        Object... uriVariables
+            String uri,
+            HttpMethod httpMethod,
+            HttpHeaders httpHeaders,
+            ParameterizedTypeReference<T> responseType,
+            ApiError timeoutExceedingError,
+            Object body,
+            Object... uriVariables
     ) throws ApiClientException {
-        return exchange(
-            uri,
-            httpMethod,
-            httpHeaders,
-            responseType,
-            timeoutExceedingError,
-            body,
-            uriVariables
-        )
-            .block();
+        try {
+            return exchange(
+                    uri,
+                    httpMethod,
+                    httpHeaders,
+                    responseType,
+                    timeoutExceedingError,
+                    body,
+                    uriVariables
+            ).block();
+        } catch (Exception e) {
+            handleWebClientRequestException(e);
+            throw new ApiClientException(timeoutExceedingError, e.getMessage());
+        }
     }
 
     private WebClient.RequestHeadersSpec<?> buildRequest(
-        HttpMethod httpMethod,
-        HttpHeaders httpHeaders,
-        String path,
-        Object body,
-        Object... params
+            HttpMethod httpMethod,
+            HttpHeaders httpHeaders,
+            String path,
+            Object body,
+            Object... params
     ) {
         Consumer<HttpHeaders> httpHeadersConsumer = it -> {
             if (httpHeaders != null) {
@@ -73,16 +77,19 @@ public abstract class AbstractApiClient {
 
         if (body == null) {
             return webClient
-                .method(httpMethod)
-                .uri(path, params)
-                .headers(httpHeadersConsumer);
+                    .method(httpMethod)
+                    .uri(path, params)
+                    .headers(httpHeadersConsumer);
         }
 
         return webClient
-            .method(httpMethod)
-            .uri(path, params)
-            .headers(httpHeadersConsumer)
-            .bodyValue(body);
+                .method(httpMethod)
+                .uri(path, params)
+                .headers(httpHeadersConsumer)
+                .bodyValue(body);
     }
 
+    protected abstract void handleWebClientRequestException(Exception e);
+    protected abstract void handleInvalidJwtFormatException();
+    protected abstract void handleMissingAuthorizationHeaderException();
 }

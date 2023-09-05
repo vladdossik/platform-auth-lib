@@ -2,6 +2,8 @@ package lissalearning.auth.client;
 
 import lissalearning.auth.exception.ApiClientException;
 import lissalearning.auth.exception.ApiError;
+import lissalearning.auth.exception.InvalidJwtFormatException;
+import lissalearning.auth.exception.MissingAuthorizationHeaderException;
 import lissalearning.auth.models.UserAuthoritiesResponse;
 import lissalearning.auth.models.UserDetailsImpl;
 import org.springframework.core.ParameterizedTypeReference;
@@ -25,24 +27,49 @@ public class AuthClient extends AbstractApiClient {
 
     public UserDetailsImpl getUserDetails(HttpServletRequest request) throws ApiClientException {
         HttpHeaders headers = new HttpHeaders();
-        if(request.getHeader(HttpHeaders.AUTHORIZATION) == null)
-            throw new ApiClientException(ApiError.CLIENT_ERROR, "Non authorized");
+        if (request.getHeader(HttpHeaders.AUTHORIZATION) == null) {
+            throw new MissingAuthorizationHeaderException("Authorization header is missing");
+        }
         headers.set(HttpHeaders.AUTHORIZATION, request.getHeader(HttpHeaders.AUTHORIZATION));
         headers.setContentType(MediaType.APPLICATION_JSON);
         ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {
         };
         try {
             UserAuthoritiesResponse response = exchangeBlocking(
-                AUTHORIZE_USER_URL,
-                POST,
-                headers,
-                typeReference,
-                ApiError.UNEXPECTED_ERROR,
-                null
+                    AUTHORIZE_USER_URL,
+                    POST,
+                    headers,
+                    typeReference,
+                    ApiError.UNEXPECTED_ERROR,
+                    null
             );
             return UserDetailsImpl.build(response);
         } catch (WebClientRequestException e) {
             throw new ApiClientException(ApiError.CLIENT_ERROR, "Error while sending request.");
+        } catch (ApiClientException ex) {
+            if (ex.getMessage().equals("Authorization header is missing")) {
+                throw new MissingAuthorizationHeaderException(ex.getMessage());
+            } else if (ex.getMessage().equals("Invalid JWT token format")) {
+                throw new InvalidJwtFormatException(ex.getMessage());
+            } else {
+                throw ex;
+            }
         }
+    }
+
+    @Override
+    protected void handleWebClientRequestException(Exception e) {
+    }
+
+    @Override
+    protected void handleInvalidJwtFormatException() {
+        String errorMessage = "Invalid JWT token format";
+        throw new InvalidJwtFormatException(errorMessage);
+    }
+
+    @Override
+    protected void handleMissingAuthorizationHeaderException() {
+        String errorMessage = "Missing Authorization header";
+        throw new MissingAuthorizationHeaderException(errorMessage);
     }
 }
