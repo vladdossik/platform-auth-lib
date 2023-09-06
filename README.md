@@ -17,7 +17,7 @@
 <dependency>
     <groupId>com.github.vladdossik</groupId>
     <artifactId>platform-auth-lib</artifactId>
-    <version>v.0.0.7</version>
+    <version>v.0.0.8</version>
 </dependency>
 ```
 
