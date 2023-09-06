@@ -25,15 +25,14 @@ public class AuthClient extends AbstractApiClient {
         super(webClient);
     }
 
-    public UserDetailsImpl getUserDetails(HttpServletRequest request) throws ApiClientException {
+    public UserDetailsImpl getUserDetails(HttpServletRequest request) throws ApiClientException, InvalidJwtFormatException, MissingAuthorizationHeaderException {
         HttpHeaders headers = new HttpHeaders();
         if (request.getHeader(HttpHeaders.AUTHORIZATION) == null) {
             throw new MissingAuthorizationHeaderException("Authorization header is missing");
         }
         headers.set(HttpHeaders.AUTHORIZATION, request.getHeader(HttpHeaders.AUTHORIZATION));
         headers.setContentType(MediaType.APPLICATION_JSON);
-        ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {
-        };
+        ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {};
         try {
             UserAuthoritiesResponse response = exchangeBlocking(
                     AUTHORIZE_USER_URL,
@@ -45,14 +44,10 @@ public class AuthClient extends AbstractApiClient {
             );
             return UserDetailsImpl.build(response);
         } catch (WebClientRequestException e) {
-            throw new ApiClientException(ApiError.CLIENT_ERROR, "Error while sending request.");
-        } catch (ApiClientException ex) {
-            if (ex.getMessage().equals("Authorization header is missing")) {
-                throw new MissingAuthorizationHeaderException(ex.getMessage());
-            } else if (ex.getMessage().equals("Invalid JWT token format")) {
-                throw new InvalidJwtFormatException(ex.getMessage());
+            if (e.getMessage() != null && e.getMessage().equals("Invalid JWT token format")) {
+                throw new InvalidJwtFormatException(e.getMessage());
             } else {
-                throw ex;
+                throw new ApiClientException(ApiError.CLIENT_ERROR, "Error while sending request.");
             }
         }
     }
