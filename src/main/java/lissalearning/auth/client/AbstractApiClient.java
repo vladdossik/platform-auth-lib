@@ -6,6 +6,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
@@ -31,8 +32,7 @@ public abstract class AbstractApiClient {
             return buildRequest(httpMethod, httpHeaders, uri, body, uriVariables)
                     .retrieve()
                     .bodyToMono(responseType);
-        } catch (Exception e) {
-            handleWebClientRequestException(e);
+        } catch (WebClientRequestException e) {
             throw new ApiClientException(timeoutExceedingError, e.getMessage());
         }
     }
@@ -56,8 +56,7 @@ public abstract class AbstractApiClient {
                     body,
                     uriVariables
             ).block();
-        } catch (Exception e) {
-            handleWebClientRequestException(e);
+        } catch (WebClientRequestException e) {
             throw new ApiClientException(timeoutExceedingError, e.getMessage());
         }
     }
@@ -88,8 +87,4 @@ public abstract class AbstractApiClient {
                 .headers(httpHeadersConsumer)
                 .bodyValue(body);
     }
-
-    protected abstract void handleWebClientRequestException(Exception e);
-    protected abstract void handleInvalidJwtFormatException();
-    protected abstract void handleMissingAuthorizationHeaderException();
 }

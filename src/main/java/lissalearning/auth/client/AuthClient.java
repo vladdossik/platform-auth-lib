@@ -27,12 +27,13 @@ public class AuthClient extends AbstractApiClient {
 
     public UserDetailsImpl getUserDetails(HttpServletRequest request) throws ApiClientException, InvalidJwtFormatException, MissingAuthorizationHeaderException {
         HttpHeaders headers = new HttpHeaders();
-        if (request.getHeader(HttpHeaders.AUTHORIZATION) == null) {
+        if (request.getHeader(HttpHeaders.AUTHORIZATION) == null || request.getHeader(HttpHeaders.AUTHORIZATION).isEmpty()) {
             throw new MissingAuthorizationHeaderException("Authorization header is missing");
         }
         headers.set(HttpHeaders.AUTHORIZATION, request.getHeader(HttpHeaders.AUTHORIZATION));
         headers.setContentType(MediaType.APPLICATION_JSON);
-        ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {};
+        ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {
+        };
         try {
             UserAuthoritiesResponse response = exchangeBlocking(
                     AUTHORIZE_USER_URL,
@@ -50,21 +51,5 @@ public class AuthClient extends AbstractApiClient {
                 throw new ApiClientException(ApiError.CLIENT_ERROR, "Error while sending request.");
             }
         }
-    }
-
-    @Override
-    protected void handleWebClientRequestException(Exception e) {
-    }
-
-    @Override
-    protected void handleInvalidJwtFormatException() {
-        String errorMessage = "Invalid JWT token format";
-        throw new InvalidJwtFormatException(errorMessage);
-    }
-
-    @Override
-    protected void handleMissingAuthorizationHeaderException() {
-        String errorMessage = "Missing Authorization header";
-        throw new MissingAuthorizationHeaderException(errorMessage);
     }
 }
