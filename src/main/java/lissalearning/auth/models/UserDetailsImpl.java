@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class UserDetailsImpl implements UserDetails {
@@ -14,6 +15,8 @@ public class UserDetailsImpl implements UserDetails {
     private String username;
 
     private String email;
+
+    private UUID externalId;
 
     private Collection<? extends GrantedAuthority> authorities;
 
@@ -26,12 +29,12 @@ public class UserDetailsImpl implements UserDetails {
 
     public static UserDetailsImpl build(UserAuthoritiesResponse user) {
         List<GrantedAuthority> authorities = user.getAuthorities().stream()
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList());
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
         return new UserDetailsImpl(
-            user.getUsername(),
-            user.getEmail(),
-            authorities);
+                user.getUsername(),
+                user.getEmail(),
+                authorities);
     }
 
     @Override
@@ -67,6 +70,10 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public UUID getExternalId() {
+        return externalId;
     }
 
 }

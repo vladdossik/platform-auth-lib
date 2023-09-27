@@ -6,7 +6,7 @@
 
     <groupId>lissa-learning</groupId>
     <artifactId>platform-auth-lib</artifactId>
-    <version>v.0.0.8</version>
+    <version>v.0.0.9</version>
     <packaging>jar</packaging>
     <name>Lissa-Learning auth lib</name>
 

@@ -4,8 +4,10 @@ import lissalearning.auth.exception.ApiClientException;
 import lissalearning.auth.exception.ApiError;
 import lissalearning.auth.exception.InvalidJwtFormatException;
 import lissalearning.auth.exception.MissingAuthorizationHeaderException;
+import lissalearning.auth.models.AuthenticationContextHolder;
 import lissalearning.auth.models.UserAuthoritiesResponse;
 import lissalearning.auth.models.UserDetailsImpl;
+import lissalearning.auth.models.UserInfo;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,6 +16,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.UUID;
 
 import static org.springframework.http.HttpMethod.POST;
 
@@ -35,6 +39,7 @@ public class AuthClient extends AbstractApiClient {
         ParameterizedTypeReference<UserAuthoritiesResponse> typeReference = new ParameterizedTypeReference<UserAuthoritiesResponse>() {
         };
         try {
+            AuthenticationContextHolder.cleanup();
             UserAuthoritiesResponse response = exchangeBlocking(
                     AUTHORIZE_USER_URL,
                     POST,
@@ -43,6 +48,7 @@ public class AuthClient extends AbstractApiClient {
                     ApiError.UNEXPECTED_ERROR,
                     null
             );
+            extractAndSaveUserInfo(request.getHeader("Authorization"), "JWT", response);
             return UserDetailsImpl.build(response);
         } catch (WebClientRequestException e) {
             if (e.getMessage() != null && e.getMessage().equals("Invalid JWT token format")) {
@@ -51,5 +57,20 @@ public class AuthClient extends AbstractApiClient {
                 throw new ApiClientException(ApiError.CLIENT_ERROR, "Error while sending request.");
             }
         }
+    }
+
+    private void extractAndSaveUserInfo(String token, String tokenType, UserAuthoritiesResponse response) {
+        UserInfo info = extractUserInfo(response);
+        AuthenticationContextHolder.setToken(token);
+        AuthenticationContextHolder.setTokenType(tokenType);
+        AuthenticationContextHolder.setUserInfo(info);
+    }
+
+    private UserInfo extractUserInfo(UserAuthoritiesResponse response) {
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(response.getExternalId());
+        userInfo.setEmail(response.getEmail());
+        userInfo.setUsername(response.getUsername());
+        return userInfo;
     }
 }
