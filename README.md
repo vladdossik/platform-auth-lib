@@ -17,7 +17,7 @@
 <dependency>
     <groupId>com.github.vladdossik</groupId>
     <artifactId>platform-auth-lib</artifactId>
-    <version>v.0.0.8</version>
+    <version>v.0.0.9</version>
 </dependency>
 ```
 
@@ -66,9 +66,20 @@ public UserDetailsImpl loadUserByToken(HttpServletRequest httpServletRequest) th
 @Autowired
 private UserDetailsServiceImpl userDetailsService;
 
+@Autowired
+@Qualifier("handlerExceptionResolver")
+private HandlerExceptionResolver resolver;
+
 @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException {
+
+        String requestPath = request.getServletPath();
+
+        if (isSwaggerRequest(requestPath) || requestPath.contains("internal")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         try {
             UserDetailsImpl userDetails = userDetailsService.loadUserByToken(request);
             UsernamePasswordAuthenticationToken authentication =
@@ -79,11 +90,16 @@ private UserDetailsServiceImpl userDetailsService;
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (ApiClientException ex) {
-            logger.error("Cannot set user authentication: {}", ex);
+        } catch (Exception e) {
+            resolver.resolveException(request, response, null, e);
         }
         filterChain.doFilter(request, response);
     }
+
+    private boolean isSwaggerRequest(String requestPath) {
+        return requestPath.startsWith("/swagger-ui") || requestPath.startsWith("/v3/api-docs");
+    }
+
 ```
 Создать SecurityConfiguration, пробросить фильтр и userDetailsService
 ``` java
@@ -127,6 +143,8 @@ public class UserAuthenticationDetails implements UserDetails {
     private UUID id; // дополнительное поле 
 
     private String username;
+
+    private UUID externalId;
 
     private Collection<? extends GrantedAuthority> authorities;
 
@@ -182,4 +200,10 @@ public UserResponseDto getUserById(@PathVariable UUID externalId) {
             .bearerFormat("JWT")
             .scheme("bearer");
     }
+```
+
+Если необходимо получить данные авторизированного пользователя из контекста:
+
+```
+AuthenticationContextHolder.getUserInfo()...
 ```
